@@ -21,11 +21,12 @@ class testApp : public ofBaseApp{
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);		
 		
-		ofImage bikers;
-		ofImage gears;
-		ofImage tdf;
-		ofImage tdfSmall;
-		ofImage transparency;
-		ofImage bikeIcon;
+		void invertImage(unsigned char* pixels, int w, int h); 
+		void findKeyColour(unsigned char* pixels, int w, int h); 
+	
+		ofImage sourceImg;
+	
+		ofColor keyColor;
+		
 };
 

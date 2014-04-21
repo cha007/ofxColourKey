@@ -1,71 +1,102 @@
+
 #include "testApp.h"
 
 //--------------------------------------------------------------
 void testApp::setup(){
-	bikers.loadImage("images/bikers.jpg");
-	gears.loadImage("images/gears.gif");
-	tdf.loadImage("images/tdf_1972_poster.jpg");
-
-	tdfSmall.loadImage("images/tdf_1972_poster.jpg");
-	tdfSmall.resize(tdfSmall.width / 4, tdfSmall.height / 4);
-	tdfSmall.setImageType(OF_IMAGE_GRAYSCALE);
-
-	transparency.loadImage("images/transparency.png");
-	bikeIcon.loadImage("images/bike_icon.png");
-	bikeIcon.setImageType(OF_IMAGE_GRAYSCALE);
+	
+	// load image file
+	sourceImg.loadImage("images/bluescreen.jpg");
+	if(sourceImg.bpp / 8 != 3) {
+		ofSystemAlertDialog("Input Image is no rgb colour image with 24 bit!");
+	}
+	
+	sourceImg.resize(400 , 300);
+	
+	// weite und hoehe merken
+	int w = sourceImg.getWidth();
+	int h = sourceImg.getHeight();
+	
+	// pointer auf bildanfang (1. pixel) setzen
+	unsigned char* pixels = sourceImg.getPixels();
+	
+	//find key colour
+	findKeyColour(pixels, w, h);
+	
+	// call invert
+	invertImage(pixels, w, h);
+	
+	// Bildaenderung registrieren
+	sourceImg.update();
 }
 
 //--------------------------------------------------------------
 void testApp::update(){
+	
 	ofBackground(255);	
 }
 
 //--------------------------------------------------------------
 void testApp::draw(){	
-	ofSetColor(255);
 
-	bikers.draw(0, 0);
-	gears.draw(600, 0);
-	tdf.draw(600, 300);
-	
-	ofSetColor(220, 50, 50);
-	tdfSmall.draw(200, 300);
-	
+	// key box
+	ofFill();
+	ofSetColor(keyColor);
+	ofRect(400, 400, 30, 30);
+
 	ofSetColor(255);
-	ofEnableAlphaBlending();
-	float wave = sin(ofGetElapsedTimef());
-	transparency.draw(500 + (wave * 100), 20);
-	ofDisableAlphaBlending();
+	sourceImg.draw(10, 10);
+
+}
+
+//--------------------------------------------------------------
+// Determin key colour
+void testApp::findKeyColour(unsigned char* pixels, int w, int h) {
 	
-	// getting the ofColors from an image,
-	// using the brightness to draw circles
-	int w = bikeIcon.getWidth();
-	int h = bikeIcon.getHeight();
-	float diameter = 10;
-	ofSetColor(255, 0, 0);
+	int size = w * h;
+	int r, g, b;
+	r=g=b=0;
+	
+	//loop through all pixels and sum up rgb values
 	for(int y = 0; y < h; y++) {
 		for(int x = 0; x < w; x++) {
-			ofColor cur = bikeIcon.getColor(x, y);
-			float size = 1 - (cur.getBrightness() / 255);
-			ofCircle(x * diameter, 500 + y * diameter, 1 + size * diameter / 2);
+			r = r + pixels[ y*w*3 + x*3 ];
+			g = g + pixels[ y*w*3 + x*3 + 1];
+			b = b + pixels[ y*w*3 + x*3 + 2];
 		}
 	}
 	
-	// same as above, but this time
-	// use the raw data directly with getPixels()
-	unsigned char* pixels = bikeIcon.getPixels();
-	ofSetColor(0, 0, 255);
+	//divide rgb sums through pixel amount to determin average background
+	r = r/size;
+	g = g/size;
+	b = b/size;
+	keyColor.set(r, g, b);
+	update();
+}
+
+
+//--------------------------------------------------------------
+void testApp::invertImage(unsigned char* pixels, int w, int h)
+{
+	// schleife, die alle pixel durchlaeuft und den rgb-wert invertiert
 	for(int y = 0; y < h; y++) {
 		for(int x = 0; x < w; x++) {
-			int index = y * w + x;
-			unsigned char cur = pixels[index];
-			float size = 1 - ((float) cur / 255);
-			ofCircle(200 + x * diameter, 500 + y * diameter, 1 + size * diameter / 2);
+			
+			//read in old values
+			int red     = pixels[ y*w*3 + x*3 ];
+			int green   = pixels[ y*w*3 + x*3 + 1 ];
+			int blue    = pixels[ y*w*3 + x*3 + 2 ];
+			
+			//calculate invert
+			red = 255-red;
+			green = 255-green;
+			blue = 255-blue;
+			
+			//write new pixels
+			pixels[ y*w*3 + x*3 ] = red;
+			pixels[ y*w*3 + x*3 + 1 ] = green;
+			pixels[ y*w*3 + x*3 + 2 ] = blue;
 		}
 	}
-	
-	ofSetColor(255);
-	bikeIcon.draw(190, 490, 20, 20);
 }
 
 //--------------------------------------------------------------
